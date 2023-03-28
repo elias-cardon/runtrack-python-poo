@@ -5,68 +5,74 @@ class Carte:
         self.valeur = valeur
         self.couleur = couleur
 
-    def __repr__(self):
-        return f"{self.valeur} de {self.couleur}"
+    def __str__(self):
+        return f"{self.valeur}{self.couleur}"
 
 class Jeu:
     def __init__(self):
-        valeurs = list(range(2, 11)) + ['Valet', 'Dame', 'Roi', 'As']
-        couleurs = ['Coeur', 'Carreau', 'Trefle', 'Pique']
-        self.paquet = [Carte(v, c) for v in valeurs for c in couleurs]
+        valeurs = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+        couleurs = ['♠', '♣', '♥', '♦']
+        self.paquet = [Carte(valeur, couleur) for couleur in couleurs for valeur in valeurs]
         random.shuffle(self.paquet)
 
     def piocher(self):
         return self.paquet.pop()
 
-    def valeur_main(self, main):
-        valeur = 0
-        as_present = False
-        for carte in main:
-            if carte.valeur == 'As':
-                as_present = True
-                valeur += 11
-            elif carte.valeur in ['Valet', 'Dame', 'Roi']:
-                valeur += 10
-            else:
-                valeur += carte.valeur
+def valeur_main(cartes):
+    valeur = 0
+    as_compte = 0
 
-        if as_present and valeur > 21:
-            valeur -= 10
-
-        return valeur
-
-    def jouer_partie(self):
-        main_joueur = [self.piocher(), self.piocher()]
-        main_croupier = [self.piocher(), self.piocher()]
-
-        print("Main du joueur:", main_joueur)
-        print("Main du croupier:", main_croupier[0], "et une carte cachée")
-
-        while True:
-            choix = input("Souhaitez-vous piocher (P) ou passer (S) ? ").lower()
-            if choix == 'p':
-                main_joueur.append(self.piocher())
-                print("Main du joueur:", main_joueur)
-                if self.valeur_main(main_joueur) > 21:
-                    print("Vous avez dépassé 21, vous avez perdu.")
-                    return
-            elif choix == 's':
-                break
-            else:
-                print("Choix invalide, veuillez choisir P ou S.")
-
-        while self.valeur_main(main_croupier) < 17:
-            main_croupier.append(self.piocher())
-
-        print("Main du croupier:", main_croupier)
-
-        if self.valeur_main(main_croupier) > 21:
-            print("Le croupier a dépassé 21, vous avez gagné !")
-        elif self.valeur_main(main_joueur) > self.valeur_main(main_croupier):
-            print("Vous avez gagné !")
+    for carte in cartes:
+        if carte.valeur in ['J', 'Q', 'K']:
+            valeur += 10
+        elif carte.valeur == 'A':
+            as_compte += 1
+            valeur += 11
         else:
-            print("Le croupier a gagné.")
+            valeur += int(carte.valeur)
+
+    while valeur > 21 and as_compte:
+        valeur -= 10
+        as_compte -= 1
+
+    return valeur
+
+def jouer_tour(jeu, main):
+    main.append(jeu.piocher())
+    return valeur_main(main)
+
+def blackjack():
+    jeu = Jeu()
+    joueur_main = []
+    croupier_main = []
+
+    for _ in range(2):
+        jouer_tour(jeu, joueur_main)
+        jouer_tour(jeu, croupier_main)
+
+    print("Main du joueur:", ', '.join(str(carte) for carte in joueur_main))
+    print("Carte visible du croupier:", croupier_main[0])
+
+    while input("Voulez-vous piocher une carte? (o/n): ").lower() == 'o':
+        jouer_tour(jeu, joueur_main)
+        print("Main du joueur:", ', '.join(str(carte) for carte in joueur_main))
+        if valeur_main(joueur_main) > 21:
+            print("Vous avez dépassé 21. Vous avez perdu.")
+            return
+
+    while valeur_main(croupier_main) < 17:
+        jouer_tour(jeu, croupier_main)
+
+    print("Main du croupier:", ', '.join(str(carte) for carte in croupier_main))
+
+    if valeur_main(croupier_main) > 21:
+        print("Le croupier a dépassé 21. Vous avez gagné!")
+    elif valeur_main(joueur_main) > valeur_main(croupier_main):
+        print("Vous avez gagné!")
+    elif valeur_main(joueur_main) < valeur_main(croupier_main):
+        print("Vous avez perdu.")
+    else:
+        print("Égalité.")
 
 if __name__ == "__main__":
-    jeu = Jeu()
-    jeu.jouer_partie()
+    blackjack()
